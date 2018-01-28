@@ -28,7 +28,7 @@ public class NaiveBayes {
      */
     
     public static void main(String[] args) throws IOException {
-        
+        //test
     	//used to store all words in all emails
     	HashSet<String> words = new HashSet<String>();
     	HashMap<String, Double> spamProbs = new HashMap<String, Double>();
