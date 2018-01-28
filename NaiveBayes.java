@@ -31,8 +31,12 @@ public class NaiveBayes {
         //test
     	//used to store all words in all emails
     	HashSet<String> words = new HashSet<String>();
+    	HashSet<String> spamWords = new HashSet<String>();
+    	HashSet<String> hamWords = new HashSet<String>();
     	HashMap<String, Double> spamProbs = new HashMap<String, Double>();
     	HashMap<String, Double> hamProbs = new HashMap<String, Double>();
+    	HashMap<String, Integer> spamCounts = new HashMap<String, Integer>();
+    	HashMap<String, Integer> hamCounts = new HashMap<String, Integer>();
     	
     	//creating files for ham, spam & test emails
     	File spam = new File("data/train/spam");
@@ -47,57 +51,69 @@ public class NaiveBayes {
     	//computing P(H):
     	double probHam = (double) (hamEmails.length) / (spamEmails.length + hamEmails.length);
     	
-    	//getting all words in spam emails
+    	
+    	//getting all words in spam emails (and getting the word counts)
     	for (File email : spamEmails) {
-    		words.addAll(tokenSet(email)); //adding words from spam emails into HashSet
+    		HashSet<String> spamEmailWords = tokenSet(email);
+    		spamWords.addAll(spamEmailWords); //adding all spam words into general words
+    		//for each word in the entire words thus far:
+    		//if already exists in spamCounts: increase count by 1
+    		//else: put a new one, w/ count of 1
+    		for (String word : spamWords) {
+    			if (spamCounts.containsKey(word)) {
+    				int oldCount = spamCounts.get(word);
+    				spamCounts.put(word, ++oldCount);
+    			}
+    			else {
+    				spamCounts.put(word, 1);
+    			}
+    		}
+    		
     	}
     	//getting all words in ham emails
     	for (File email : hamEmails) {
-    		words.addAll(tokenSet(email)); //adding words from ham emails into HashSet
+    		HashSet<String> hamEmailWords = tokenSet(email);
+    		hamWords.addAll(hamEmailWords); //adding all spam words into general words
+    		//for each word in the entire words thus far:
+    		//if already exists in hamCounts: increase count by 1
+    		//else: put a new one, w/ count of 1
+    		for (String word : hamWords) {
+    			if (hamCounts.containsKey(word)) {
+    				int oldCount = hamCounts.get(word);
+    				hamCounts.put(word, ++oldCount);
+    			}
+    			else {
+    				hamCounts.put(word, 1);
+    			}
+    		}
     	}
-
-    	//try to fit the lower part of this up ^^^^^^^^^ here!
-    	/*
-    	 * --computing P(w | S) & P(w | H)--
-    	 * for each word:
-    	 * 	-count the number of spam/ham emails that word is seen in
-    	 *	-calculate that individual P(w | S) & P(w | H)
-    	 *	-add it to both hashmaps that keep all probabilities
-    	 *
-    	 *NOTE : REEEEAAAAAAAAAAAAAAAAAAAAAALLLLLLLLLLYYYYYYYYYYYYYYYYYYY   SSSSSSSLLLLLLLLOOOOOOOOOOOWWWWWWWWWWWWWWWW
-    	 */
     	
-    	//used to keep track of the number of emails each word is seen in (for spam & ham emails)
-    	int spamCount, hamCount;
+    	words.addAll(spamWords);
+    	words.addAll(hamWords);
     	
-    	for (String word : words) {		
-    		//resetting counts to 0
-    		spamCount = 0;
-    		hamCount = 0;
-    		//getting # of spam emails this word is seen in
-    		for (File email : spamEmails) {
-    			HashSet<String> spamEmailWords = tokenSet(email); //potentially unnecessary line (just put in if statement)
-    			if (spamEmailWords.contains(word)) {
-    				spamCount++;
-    			}
+    	double spamProb, hamProb;
+    	//now that we have counts, find probability of each spam word:
+    	for (String word : words) {
+    		//calculating the probabilities for each word
+    		if (spamCounts.containsKey(word)) {
+    			spamProb = (double) (spamCounts.get(word) + 1) / (spamEmails.length + 2);
     		}
-    		//getting # of ham emails this word is seen in
-    		for (File email : hamEmails) {
-    			HashSet<String> hamEmailWords = tokenSet(email); //potentially unnecessary line (just put in if statement)
-    			if (hamEmailWords.contains(word)) {
-    				hamCount++;
-    			}
+    		else {
+    			spamProb = (double) 1 / (spamEmails.length + 2);
     		}
-    		System.out.println("spam count:" + spamCount);
-    		System.out.println("ham count:" + hamCount);
-    		//calculating individual word probability, adding to total set
-    		double spamProb = (double) (spamCount + 1) / (spamEmails.length + 2);
-    		double hamProb = (double) (hamCount + 1) / (hamEmails.length + 2);
+    		if (hamCounts.containsKey(word)) {
+    			hamProb = (double) (hamCounts.get(word) + 1) / (hamEmails.length + 2);
+    		}
+    		else {
+    			hamProb = (double) 1 / (hamEmails.length + 2);
+    		}
     		
     		//adding word and its respective probabilities to both HashMaps
     		spamProbs.put(word, spamProb);
     		hamProbs.put(word, hamProb);
     	}
+    		
+    	
     	
     	/*
     	 * for each test email:
